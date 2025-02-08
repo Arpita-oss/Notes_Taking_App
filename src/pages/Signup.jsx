@@ -19,7 +19,7 @@ const[password,setPassword] = useState()
   
       if (response.data && response.data.token) {
         localStorage.setItem("token", response.data.token);
-        navigate("/login");
+        navigate("/");
       } else {
         console.error("Login failed: No token received");
       }
