@@ -87,9 +87,7 @@ const handleSubmit = async (e) => {
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have account?
-            <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-             Register
-            </a>
+           <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">Register</Link>
           </p>
         </div>
       </div>
