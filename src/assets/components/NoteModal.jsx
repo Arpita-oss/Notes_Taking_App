@@ -1,26 +1,37 @@
 import React, { useState } from 'react';
 import { FaTimes, FaImage, FaPlus } from 'react-icons/fa';
 
-
 const NoteModal = ({ isOpen, onClose, AddNote }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState(null);
+  const [file, setFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImage(reader.result);
+        setImagePreview(reader.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await AddNote(title, description, image);
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    if (file) {
+      formData.append('image', file);
+    }
+
+    await AddNote(formData);
     resetForm();
     onClose();
   };
@@ -28,7 +39,8 @@ const NoteModal = ({ isOpen, onClose, AddNote }) => {
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setImage(null);
+    setFile(null);
+    setImagePreview(null);
   };
 
   if (!isOpen) return null;
@@ -45,55 +57,71 @@ const NoteModal = ({ isOpen, onClose, AddNote }) => {
 
         <h2 className="text-2xl font-bold mb-4">Create New Note</h2>
 
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full border p-2 rounded mb-4"
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border p-2 rounded mb-4"
+            required
+          />
 
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full border p-2 rounded mb-4 h-32 resize-none"
-        />
+          <textarea
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full border p-2 rounded mb-4 h-32 resize-none"
+            required
+          />
 
-        <div className="mb-4">
-          <label
-            htmlFor="image-upload"
-            className="flex items-center cursor-pointer bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          <div className="mb-4">
+            <label
+              htmlFor="image-upload"
+              className="flex items-center cursor-pointer bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            >
+              <FaImage className="mr-2" />
+              Upload Image
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
+            {imagePreview && (
+              <div className="relative mt-2">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-40 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    setImagePreview(null);
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                >
+                  <FaTimes size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-green-500 text-white p-2 rounded flex items-center justify-center hover:bg-green-600"
           >
-            <FaImage className="mr-2" />
-            Upload Image
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-          </label>
-          {image && (
-            <img
-              src={image}
-              alt="Preview"
-              className="mt-2 w-full h-40 object-cover rounded"
-            />
-          )}
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-green-500 text-white p-2 rounded flex items-center justify-center hover:bg-green-600"
-        >
-          <FaPlus className="mr-2" />
-          Add Note
-        </button>
+            <FaPlus className="mr-2" />
+            Add Note
+          </button>
+        </form>
       </div>
     </div>
   );
-}
+};
 
 export default NoteModal;

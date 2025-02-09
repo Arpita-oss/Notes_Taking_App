@@ -15,17 +15,52 @@ const AudioNoteModal = ({ isOpen, onClose, AddNote }) => {
   const streamRef = useRef(null);
   const recognitionRef = useRef(null);
   const fileInputRef = useRef(null);
+  const animationFrameRef = useRef(null);
 
   useEffect(() => {
-    // Cleanup function to stop any ongoing recording
     return () => {
-      stopRecording();
+      cleanupRecording();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, []);
+
+  const cleanupRecording = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.log('Recognition already stopped');
+      }
+      recognitionRef.current = null;
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {
+        console.log('AudioContext already closed');
+      }
+      audioContextRef.current = null;
+    }
+
+    setIsRecording(false);
+    setAudioLevel(0);
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Image size should be less than 5MB');
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -43,124 +78,103 @@ const AudioNoteModal = ({ isOpen, onClose, AddNote }) => {
     }
   };
 
-  const startRecording = () => {
-    // Ensure browser compatibility
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Your browser does not support speech recognition. Try Chrome or Edge.');
-      return;
+  const startRecording = async () => {
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Your browser does not support speech recognition. Try Chrome or Edge.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Setup audio context
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      source.connect(analyserRef.current);
+
+      // Setup speech recognition
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      recognitionRef.current = recognition;
+
+      recognition.onresult = (event) => {
+        const results = Array.from(event.results);
+        const transcript = results
+          .map(result => result[0].transcript)
+          .join('');
+        setTranscript(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        alert(`Speech recognition error: ${event.error}`);
+      };
+
+      recognition.start();
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.start();
+
+      setIsRecording(true);
+      updateAudioLevel();
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      alert('Could not access microphone. Check permissions and try again.');
     }
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        // Setup audio context
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaStreamSource(stream);
-        
-        const analyser = audioContext.createAnalyser();
-        source.connect(analyser);
-
-        // Setup speech recognition
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event) => {
-          const results = Array.from(event.results);
-          const transcript = results
-            .map(result => result[0].transcript)
-            .join('');
-          
-          setTranscript(transcript);
-        };
-
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          alert(`Speech recognition error: ${event.error}`);
-        };
-
-        // Start recognition and recording
-        recognition.start();
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-
-        // Save references for cleanup
-        streamRef.current = stream;
-        mediaRecorderRef.current = mediaRecorder;
-        recognitionRef.current = recognition;
-        audioContextRef.current = audioContext;
-        analyserRef.current = analyser;
-
-        setIsRecording(true);
-        updateAudioLevel(analyser);
-      })
-      .catch(error => {
-        console.error('Microphone access error:', error);
-        alert('Could not access microphone. Check permissions and try again.');
-      });
   };
 
-  const updateAudioLevel = (analyser) => {
-    if (!analyser || !isRecording) return;
+  const updateAudioLevel = () => {
+    if (!analyserRef.current || !isRecording) return;
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(dataArray);
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
     
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
     setAudioLevel(average / 255);
     
-    requestAnimationFrame(() => updateAudioLevel(analyser));
+    animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
   };
 
   const stopRecording = () => {
-    // Stop all recording resources
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-    }
-
-    setIsRecording(false);
-    setAudioLevel(0);
+    cleanupRecording();
   };
 
-  const saveAudioNote = () => {
+  const saveAudioNote = async () => {
     if (!title.trim()) {
       alert('Please add a title for your note');
       return;
     }
 
-    const imageBase64 = imagePreview || null;
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description || transcript);
+      formData.append('isAudioNote', 'true');
+      formData.append('audioTranscription', transcript);
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
 
-    AddNote(
-      title, 
-      description || transcript, 
-      imageBase64, 
-      true, 
-      transcript
-    );
-    
-    // Reset modal state
-    setTitle('');
-    setDescription('');
-    setTranscript('');
-    setImageFile(null);
-    setImagePreview(null);
-    onClose();
+      await AddNote(formData);
+      
+      // Reset modal state
+      setTitle('');
+      setDescription('');
+      setTranscript('');
+      setImageFile(null);
+      setImagePreview(null);
+      onClose();
+    } catch (error) {
+      console.error('Error saving note:', error);
+      alert('Failed to save note. Please try again.');
+    }
   };
-
   if (!isOpen) return null;
 
   return (

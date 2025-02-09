@@ -14,9 +14,10 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('newest');
   const [isLoading, setIsLoading] = useState(true);
- 
 
+  // Fetch notes from the server
   const fetchNotes = async () => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -28,14 +29,14 @@ const Home = () => {
           'Authorization': token
         }
       });
-      setNotes(data.Notes);
-      setIsLoading(false);
+      setNotes(data.Notes || []);
     } catch (error) {
-      console.log(error);
-      setIsLoading(false);
+      console.error("Error fetching notes:", error);
       if (error.response?.status === 401) {
         navigate("/login");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,52 +44,48 @@ const Home = () => {
     fetchNotes();
   }, []);
 
+  // Close modal and refresh notes
   const onClose = () => {
     setModalOpen(false);
+    setIsAudioModalOpen(false);
     fetchNotes();
   };
 
-  const AddNote = async (title, description, image, isAudioNote = false, audioTranscription = '') => {
+  // Add a new note
+  const AddNote = async (formData) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        console.error("No token found");
         navigate("/login");
         return;
       }
   
       const response = await axios.post(
         "https://notes-app-backend-6nc9.onrender.com/api/note/add",
-        { 
-          title, 
-          description, 
-          image, 
-          isAudioNote, 
-          audioTranscription 
-        },
+        formData,
         {
           headers: {
             'Authorization': token,
-            'Content-Type': 'application/json'
+            'Content-Type': 'multipart/form-data'
           }
         }
       );
   
       if (response.status === 201) {
         onClose();
-        fetchNotes();
+        await fetchNotes(); // Refresh notes after successful addition
         alert("Note added successfully!");
       }
     } catch (error) {
-      console.error("Full error:", error);
+      console.error("Error adding note:", error);
       alert(error.response?.data?.message || "Error adding note");
-      
       if (error.response?.status === 401) {
         navigate("/login");
       }
     }
   };
 
+  // Delete a note
   const handleDeleteNote = async (noteId) => {
     try {
       const token = localStorage.getItem("token");
@@ -97,7 +94,7 @@ const Home = () => {
           'Authorization': token
         }
       });
-      fetchNotes();
+      fetchNotes(); // Refresh notes after deletion
     } catch (error) {
       console.error("Error deleting note:", error);
       if (error.response?.status === 401) {
@@ -106,15 +103,21 @@ const Home = () => {
     }
   };
 
-  const handleUpdateNote = async (noteId, updatedNote) => {
+  // Update a note
+  const handleUpdateNote = async (noteId, formData) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`https://notes-app-backend-6nc9.onrender.com/api/note/${noteId}`, updatedNote, {
-        headers: {
-          'Authorization': token
+      await axios.put(
+        `https://notes-app-backend-6nc9.onrender.com/api/note/${noteId}`,
+        formData,
+        {
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      });
-      fetchNotes();
+      );
+      fetchNotes(); // Refresh notes after update
     } catch (error) {
       console.error("Error updating note:", error);
       if (error.response?.status === 401) {
@@ -123,14 +126,13 @@ const Home = () => {
     }
   };
 
+  // Filter and sort notes based on search and sort order
   const getFilteredAndSortedNotes = () => {
-    if (!notes) return [];
-    
     let filteredNotes = [...notes];
-    
+
     // Apply search filter
     if (searchQuery) {
-      filteredNotes = filteredNotes.filter(note => 
+      filteredNotes = filteredNotes.filter(note =>
         note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         note.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -144,6 +146,7 @@ const Home = () => {
     });
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
@@ -200,7 +203,7 @@ const Home = () => {
 
         {/* Notes Grid */}
         <div className="container mx-auto px-4 py-8">
-          {notes && notes.length > 0 ? (
+          {notes.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {getFilteredAndSortedNotes().map(note => (
                 <NoteCard
@@ -242,7 +245,7 @@ const Home = () => {
         />
         <AudioNoteModal
           isOpen={isAudioModalOpen}
-          onClose={() => setIsAudioModalOpen(false)}
+          onClose={onClose}
           AddNote={AddNote}
         />
       </div>

@@ -32,17 +32,23 @@ const NoteCard = ({ note, onDelete, onUpdate }) => {
   const handleToggleFavorite = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
+      const response = await axios.put(
         `https://notes-app-backend-6nc9.onrender.com/api/note/toggle-favorite/${note._id}`,
         {},
-        { headers: { Authorization: token } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      onUpdate(note._id, { ...note, isFavorite: !note.isFavorite });
+      
+      if (response.data.success) {
+        onUpdate(note._id, { ...note, isFavorite: !note.isFavorite });
+      } else {
+        console.error('Failed to toggle favorite:', response.data.message);
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      // Optionally show an error message to the user
+      alert('Failed to update favorite status. Please try again.');
     }
   };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -136,9 +142,13 @@ const NoteCard = ({ note, onDelete, onUpdate }) => {
           {note.image && (
             <div className="mb-4">
               <img
-                src={note.image}
+                src={note.image} // Cloudinary already provides the full URL
                 alt="Note attachment"
                 className="w-full h-48 object-cover rounded-md"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'path/to/fallback/image.png'; // Add a fallback image
+                }}
               />
             </div>
           )}
