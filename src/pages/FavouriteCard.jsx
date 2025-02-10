@@ -18,21 +18,26 @@ const FavouriteCard = () => {
           return;
         }
 
-        const response = await axios.get("https://notes-app-backend-6nc9.onrender.com/api/note/favourites", {
-          headers: { Authorization: token }
-        });
-        
+        const response = await axios.get(
+          "https://notes-app-backend-6nc9.onrender.com/api/note/favourites",
+          {
+            headers: {
+              'Authorization': token,
+              'Content-Type': 'application/json'  // Add this
+            }
+          }
+        );
+
         setFavourites(response.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching favourites:', error);
+        console.error('Error fetching favourites:', error.response?.data);
         setLoading(false);
         if (error.response?.status === 401) {
           navigate('/login');
         }
       }
     };
-
     fetchFavourites();
   }, [navigate]);
 
@@ -52,15 +57,15 @@ const FavouriteCard = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `https://notes-app-backend-6nc9.onrender.com/api/note/${noteId}`, 
-        updatedNote, 
+        `https://notes-app-backend-6nc9.onrender.com/api/note/${noteId}`,
+        updatedNote,
         { headers: { Authorization: token } }
       );
-      
+
       if (!updatedNote.isFavorite) {
         setFavourites(favourites.filter(note => note._id !== noteId));
       } else {
-        setFavourites(favourites.map(note => 
+        setFavourites(favourites.map(note =>
           note._id === noteId ? response.data.note : note
         ));
       }
@@ -74,7 +79,7 @@ const FavouriteCard = () => {
       <div className="min-h-screen bg-gray-50 flex">
         <Navbar />
         <div className="ml-64 w-full flex items-center justify-center">
-          <div className="text-xl text-gray-600">Loading...</div>
+          <div className="text-xl text-gray-600">Almost there... We promise it’s worth the wait!</div>
         </div>
       </div>
     );

@@ -30,23 +30,26 @@ const NoteCard = ({ note, onDelete, onUpdate }) => {
   };
 
   const handleToggleFavorite = async () => {
+    const token = localStorage.getItem('token');
+    
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.put(
         `https://notes-app-backend-6nc9.onrender.com/api/note/toggle-favorite/${note._id}`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': token, // Full token
+            'Content-Type': 'application/json'
+          } 
+        }
       );
       
       if (response.data.success) {
         onUpdate(note._id, { ...note, isFavorite: !note.isFavorite });
-      } else {
-        console.error('Failed to toggle favorite:', response.data.message);
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Optionally show an error message to the user
-      alert('Failed to update favorite status. Please try again.');
+      console.error('Favorite toggle error', error.response?.data);
+      alert('Failed to update favorite');
     }
   };
   const formatDate = (dateString) => {

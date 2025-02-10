@@ -152,7 +152,7 @@ const Home = () => {
       <div className="min-h-screen bg-gray-50 flex">
         <Navbar />
         <div className="ml-64 w-full flex items-center justify-center">
-          <div className="text-xl text-gray-600">Loading...</div>
+          <div className="text-xl text-gray-600">Almost there... We promise it’s worth the wait!</div>
         </div>
       </div>
     );
