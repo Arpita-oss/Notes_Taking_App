@@ -59,7 +59,7 @@ const Home = () => {
         navigate("/login");
         return;
       }
-  
+
       const response = await axios.post(
         "https://notes-app-backend-6nc9.onrender.com/api/note/add",
         formData,
@@ -70,7 +70,7 @@ const Home = () => {
           }
         }
       );
-  
+
       if (response.status === 201) {
         onClose();
         await fetchNotes(); // Refresh notes after successful addition
@@ -151,8 +151,11 @@ const Home = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Navbar />
-        <div className="ml-64 w-full flex items-center justify-center">
-          <div className="text-xl text-gray-600">Almost there... We promise it’s worth the wait!</div>
+        <div className="flex-1 p-4 md:ml-64 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <div className="text-xl text-gray-600">Almost there... We promise it's worth the wait!</div>
+          </div>
         </div>
       </div>
     );
@@ -163,11 +166,12 @@ const Home = () => {
       <Navbar />
       <div className="flex-1 md:ml-64 min-h-screen">
         {/* Search and Sort Bar */}
-        <div className="sticky top-0 bg-white shadow-sm z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+
+        <div className="sticky top-0 bg-white shadow-sm z-10 p-4 md:p-4 mt-16 md:mt-0">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row gap-4">
               {/* Search Input */}
-              <div className="relative w-full md:w-1/2">
+              <div className="relative flex-grow">
                 <input
                   type="text"
                   placeholder="Search notes..."
@@ -187,11 +191,11 @@ const Home = () => {
 
               {/* Sort Dropdown */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-600 hidden md:inline">Sort by:</span>
+                <span className="text-gray-600 hidden sm:inline whitespace-nowrap">Sort by:</span>
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>

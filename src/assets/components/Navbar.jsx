@@ -15,22 +15,27 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden"
+        className="fixed top-4 left-4 z-50 md:hidden p-2 bg-white rounded-lg shadow-md"
       >
-        {isMenuOpen ? '✕' : '☰'}
+        {isMenuOpen ? (
+          <span className="text-2xl">✕</span>
+        ) : (
+          <span className="text-2xl">☰</span>
+        )}
       </button>
 
       {/* Navbar */}
-      <div className={`
-        fixed left-0 top-0 h-screen w-64 bg-gray-100 
-        transform transition-transform duration-300
-        ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0 flex flex-col p-5 shadow-md z-40
-      `}>
-        <div className="flex justify-between items-center mb-8">
+      <div
+        className={`
+          fixed left-0 top-0 h-screen w-64 bg-gray-100
+          transform transition-transform duration-300 ease-in-out
+          ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 flex flex-col p-5 shadow-md z-40
+        `}
+      >
+        <div className="flex justify-between items-center mb-8 mt-14 md:mt-0">
           <button
             onClick={handleLogout}
             className="bg-purple-500 text-white py-2 px-4 rounded hover:bg-gray-500 transition"
@@ -76,7 +81,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 backdrop-blur  bg-opacity-50 z-30 md:hidden"
         />
       )}
     </>

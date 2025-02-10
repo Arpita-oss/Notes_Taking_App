@@ -23,7 +23,7 @@ const FavouriteCard = () => {
           {
             headers: {
               'Authorization': token,
-              'Content-Type': 'application/json'  // Add this
+              'Content-Type': 'application/json'
             }
           }
         );
@@ -78,34 +78,46 @@ const FavouriteCard = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Navbar />
-        <div className="ml-64 w-full flex items-center justify-center">
-          <div className="text-xl text-gray-600">Almost there... We promise it’s worth the wait!</div>
+        <div className="flex-1 p-4 md:ml-64 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <div className="text-xl text-gray-600">Almost there... We promise it's worth the wait!</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <Navbar />
-      <div className="flex-1 md:ml-64 p-8">
-        <h1 className="text-2xl font-bold mb-6">Favourite Notes</h1>
-        {favourites.length === 0 ? (
-          <div className="text-center text-gray-500">
-            No favourite notes yet
+      <div className="flex-1 md:ml-64 min-h-screen">
+        {/* Header Section */}
+        <div className="sticky top-0 bg-white shadow-sm z-10 p-4 mt-16 md:mt-0">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-2xl font-bold text-gray-800">Favourite Notes</h1>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favourites.map(note => (
-              <NoteCard
-                key={note._id}
-                note={note}
-                onDelete={handleDeleteNote}
-                onUpdate={handleUpdateNote}
-              />
-            ))}
-          </div>
-        )}
+        </div>
+
+        {/* Content Section */}
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+          {favourites.length === 0 ? (
+            <div className="text-center text-gray-500 mt-4 bg-white rounded-lg p-8 shadow-sm">
+              No favourite notes yet. Add some notes to your favourites!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+              {favourites.map(note => (
+                <NoteCard
+                  key={note._id}
+                  note={note}
+                  onDelete={handleDeleteNote}
+                  onUpdate={handleUpdateNote}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
