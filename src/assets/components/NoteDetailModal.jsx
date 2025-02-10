@@ -57,7 +57,7 @@ const NoteDetailModal = ({ note, onClose, onUpdate }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `http://:5000/api/note/toggle-favorite/${note._id}`,
+        `https://notes-app-backend-6nc9.onrender.com/api/note/${note._id}`,
         {},
         {
           headers: {
